@@ -1,16 +1,17 @@
+import os
 from typing import List, Dict, Any
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import Chroma
-from langchain.schema import Document
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 
 
 # Custom Prompt 
-QA_PROMPT = PromptTemplate(
-    input_variables=["context", "question"],
-    template="""You are an assistant that answers questions about a YouTube video.
+QA_PROMPT = PromptTemplate.from_template(
+    """You are an assistant that answers questions about a YouTube video.
 Use ONLY the transcript excerpts below to answer. If the answer is not in the excerpts, say so.
 Be concise and direct. Do not fabricate information.
 
@@ -24,7 +25,8 @@ Answer:"""
 
 
 def build_qa_chain(transcript_chunks: List[Dict], openai_api_key: str) -> Dict[str, Any]:
-    
+    os.environ["OPENAI_API_KEY"] = openai_api_key
+
     # Step 1 — Convert to LangChain Documents
     documents = []
     for chunk in transcript_chunks:
@@ -50,7 +52,6 @@ def build_qa_chain(transcript_chunks: List[Dict], openai_api_key: str) -> Dict[s
     # Step 3 — Embed + store in Chroma
     embeddings = OpenAIEmbeddings(
         model="text-embedding-3-small",
-        openai_api_key=openai_api_key
     )
     vectorstore = Chroma.from_documents(
         documents=split_docs,
@@ -58,22 +59,27 @@ def build_qa_chain(transcript_chunks: List[Dict], openai_api_key: str) -> Dict[s
         collection_name="youtube_transcript"
     )
 
-    # Step 4 — Build RetrievalQA chain
+    # Step 4 — Build LCEL chain
     llm = ChatOpenAI(
         model="gpt-4o-mini",
         temperature=0,
-        openai_api_key=openai_api_key
     )
     retriever = vectorstore.as_retriever(
         search_type="mmr",             # Maximal Marginal Relevance → diverse results
         search_kwargs={"k": 5, "fetch_k": 10}
     )
-    chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": QA_PROMPT}
+
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    chain = (
+        RunnablePassthrough.assign(
+            context=lambda x: format_docs(retriever.invoke(x["question"])),
+            source_documents=lambda x: retriever.invoke(x["question"]),
+        )
+        | RunnablePassthrough.assign(
+            answer=QA_PROMPT | llm | StrOutputParser()
+        )
     )
 
     return {
@@ -86,9 +92,9 @@ def build_qa_chain(transcript_chunks: List[Dict], openai_api_key: str) -> Dict[s
 def ask_question(qa_chain_obj: Dict[str, Any], question: str) -> Dict[str, Any]:
 
     chain = qa_chain_obj["chain"]
-    result = chain.invoke({"query": question})
+    result = chain.invoke({"question": question})
 
-    answer = result.get("result", "").strip()
+    answer = result.get("answer", "").strip()
     source_docs = result.get("source_documents", [])
 
     # Deduplicate timestamps from source docs
