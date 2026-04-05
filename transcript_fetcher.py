@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict, Tuple
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
 
 
 def extract_video_id(url: str) -> str:
@@ -32,13 +33,15 @@ def fetch_transcript(video_id: str, chunk_duration_seconds: int = 60) -> Tuple[L
 
     try:
         # Prefer manual captions; fall back to auto-generated
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        api = YouTubeTranscriptApi()
+        transcript_list = api.list(video_id)
         try:
             transcript = transcript_list.find_manually_created_transcript(["en"])
         except Exception:
             transcript = transcript_list.find_generated_transcript(["en"])
 
-        raw_entries = transcript.fetch()
+        raw_entries = [{"text": s.text, "start": s.start, "duration": s.duration}
+                       for s in transcript.fetch()]
 
     except TranscriptsDisabled:
         raise ValueError("Transcripts are disabled for this video.")

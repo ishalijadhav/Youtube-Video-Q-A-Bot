@@ -2,7 +2,7 @@
 YouTube Video Q&A Bot
 =====================
 Paste a YouTube URL → auto-fetches transcript → chat with the video using RAG.
-Built with: youtube-transcript-api · LangChain · ChromaDB · OpenAI
+Built with: youtube-transcript-api · LangChain · ChromaDB · Groq + HuggingFace
 """
 
 import streamlit as st
@@ -82,7 +82,7 @@ st.markdown("""
 # ─── Sidebar ──────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("## ⚙️ Configuration")
-    openai_key = st.text_input("OpenAI API Key", type="password", help="Required for embeddings + LLM")
+    groq_key = st.text_input("Groq API Key", type="password", help="Free key at console.groq.com")
     st.markdown("---")
     st.markdown("### 📖 How it works")
     st.markdown("""
@@ -93,7 +93,7 @@ with st.sidebar:
     """)
     st.markdown("---")
     st.markdown("### 🛠️ Stack")
-    st.markdown("`youtube-transcript-api` · `LangChain` · `ChromaDB` · `OpenAI`")
+    st.markdown("`youtube-transcript-api` · `LangChain` · `ChromaDB` · `Groq`")
 
     if st.button("🗑️ Clear Chat & Reset", use_container_width=True):
         for key in ["messages", "qa_chain", "video_id", "transcript_loaded"]:
@@ -131,8 +131,8 @@ with col2:
 
 # ─── Load Transcript + Build RAG ─────────────────────────────────────────────
 if load_button and youtube_url:
-    if not openai_key:
-        st.error("⚠️ Please enter your OpenAI API key in the sidebar.")
+    if not groq_key:
+        st.error("⚠️ Please enter your Groq API key in the sidebar.")
     else:
         with st.spinner("📥 Fetching transcript..."):
             try:
@@ -144,7 +144,7 @@ if load_button and youtube_url:
                 st.session_state.transcript_loaded = False  # reset while building
 
                 with st.spinner("🧠 Building RAG pipeline (chunking + embedding)..."):
-                    qa_chain = build_qa_chain(transcript_chunks, openai_key)
+                    qa_chain = build_qa_chain(transcript_chunks, groq_key)
                     st.session_state.qa_chain = qa_chain
                     st.session_state.transcript_loaded = True
                     st.session_state.messages = []
