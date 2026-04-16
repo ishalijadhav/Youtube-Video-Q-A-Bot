@@ -4,12 +4,12 @@ YouTube Video Q&A Bot
 Paste a YouTube URL → auto-fetches transcript → chat with the video using RAG.
 Built with: youtube-transcript-api · LangChain · ChromaDB · Groq + HuggingFace
 """
-
+import os
 import streamlit as st
 from rag_pipeline import build_qa_chain, ask_question
 from transcript_fetcher import fetch_transcript, extract_video_id
 
-# ─── Page Config ──────────────────────────────────────────────────────────────
+# Page Config
 st.set_page_config(
     page_title="YouTube Q&A Bot",
     page_icon="🎬",
@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── Custom CSS ───────────────────────────────────────────────────────────────
+# Custom CSS
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
@@ -79,10 +79,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ─── Sidebar ──────────────────────────────────────────────────────────────────
+# Sidebar
 with st.sidebar:
     st.markdown("## ⚙️ Configuration")
-    groq_key = st.text_input("Groq API Key", type="password", help="Free key at console.groq.com")
+    #_key = st.text_input("Groq API Key", type="password", help="Free key at console.groq.com")
+    groq_key = st.text_input(
+        "Groq API Key",
+        value=os.environ.get("GROQ_API_KEY", ""),
+        type="password",
+        help="Free key at console.groq.com"
+    )
     st.markdown("---")
     st.markdown("### 📖 How it works")
     st.markdown("""
@@ -102,7 +108,7 @@ with st.sidebar:
         st.rerun()
 
 
-# ─── Session State Init ───────────────────────────────────────────────────────
+# Session State Init
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "transcript_loaded" not in st.session_state:
@@ -111,13 +117,13 @@ if "qa_chain" not in st.session_state:
     st.session_state.qa_chain = None
 
 
-# ─── Header ───────────────────────────────────────────────────────────────────
+# Header
 st.markdown("# 🎬 YouTube Q&A Bot")
 st.markdown("*Paste a video URL and start chatting with its content.*")
 st.markdown("---")
 
 
-# ─── URL Input ────────────────────────────────────────────────────────────────
+# URL Input
 col1, col2 = st.columns([4, 1])
 with col1:
     youtube_url = st.text_input(
@@ -129,7 +135,7 @@ with col2:
     load_button = st.button("🚀 Load Video", use_container_width=True, type="primary")
 
 
-# ─── Load Transcript + Build RAG ─────────────────────────────────────────────
+# Load Transcript + Build RAG
 if load_button and youtube_url:
     if not groq_key:
         st.error("⚠️ Please enter your Groq API key in the sidebar.")
@@ -155,7 +161,7 @@ if load_button and youtube_url:
                 st.error(f"❌ Error: {str(e)}")
 
 
-# ─── Video Info Card ──────────────────────────────────────────────────────────
+#Video Info Card
 if st.session_state.transcript_loaded and "video_id" in st.session_state:
     vid_id = st.session_state.video_id
     st.markdown(f"""
@@ -172,7 +178,7 @@ if st.session_state.transcript_loaded and "video_id" in st.session_state:
     """, unsafe_allow_html=True)
 
 
-# ─── Chat Interface ───────────────────────────────────────────────────────────
+# Chat Interface
 if st.session_state.transcript_loaded:
     st.markdown("### 💬 Chat with the Video")
 
