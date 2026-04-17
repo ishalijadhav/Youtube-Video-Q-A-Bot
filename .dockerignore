@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.env
+eval_results.json
+*.md
+k8s/
+.cache/
+.claude

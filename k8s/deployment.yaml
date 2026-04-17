@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: youtube-qa-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: youtube-qa-bot
+  template:
+    metadata:
+      labels:
+        app: youtube-qa-bot
+    spec:
+      containers:
+        - name: youtube-qa-bot
+          image: youtube-qa-bot:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8501
+          env:
+            - name: GROQ_API_KEY
+              value: "your-groq-api-key-here"
+            - name: HF_HOME
+              value: "/cache/huggingface"
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /cache/huggingface
+      volumes:
+        - name: hf-cache
+          emptyDir: {}
