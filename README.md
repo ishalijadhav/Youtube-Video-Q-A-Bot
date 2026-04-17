@@ -1,11 +1,13 @@
 # 🎬 YouTube Video Q&A Bot
 
-> Paste any YouTube URL → auto-fetch transcript → chat with the video. 
-Answers include clickable timestamps linking back to the exact moment in the video.
+> Paste any YouTube URL → auto-fetch transcript → chat with the video. Answers include clickable timestamps linking back to the exact moment in the video.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![LangChain](https://img.shields.io/badge/LangChain-0.2+-green.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.35+-red.svg)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-streamlit.app-FF4B4B?logo=streamlit)](https://youtube-video-bot.streamlit.app/)
+
+**🚀 [Try it live → youtube-video-bot.streamlit.app](https://youtube-video-bot.streamlit.app/)**
 
 ---
 
@@ -41,7 +43,6 @@ YouTube URL
     │
     ▼
 [User Question] ── MMR Retrieval → Top-5 chunks → Groq LLaMA 3.1 → Answer + Timestamps
-
 ```
 
 **Key design decisions:**
@@ -63,8 +64,8 @@ YouTube URL
 ### 1. Clone and set up
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/youtube-qa-bot.git
-cd youtube-qa-bot
+git clone https://github.com/ishalijadhav/Youtube-Video-Q-A-Bot.git
+cd Youtube-Video-Q-A-Bot
 
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
@@ -109,6 +110,8 @@ youtube-qa-bot/
 ├── transcript_fetcher.py   # Time-window chunking with timestamp metadata
 ├── rag_pipeline.py         # LangChain + ChromaDB + MMR retrieval chain
 ├── evaluate.py             # Benchmarking suite — produces resume metrics
+├── Dockerfile              # Container image
+├── k8s/                    # Kubernetes manifests (Deployment + Service)
 ├── requirements.txt
 └── README.md
 ```
@@ -125,9 +128,10 @@ youtube-qa-bot/
 | Vector Store | `ChromaDB` | Fast in-memory retrieval, no infra needed |
 | LLM | `Groq llama-3.1-8b-instant` | Sub-second inference, free tier |
 | UI | `Streamlit` | Rapid prototype, deployable in 1 click |
+| Containerization | `Docker` + `Kubernetes` | Local deployment with K8s manifests |
 
 ---
 
 ## 📄 License
 
-MIT [LICENSE]
+MIT
